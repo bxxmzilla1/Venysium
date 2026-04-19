@@ -194,6 +194,7 @@ const API = BASE + '/api';
 
 const PALETTES=[['#3b5bdb','#1c3799'],['#0ca678','#096b52'],['#e8590c','#b54309'],['#9c36b5','#6d23a0'],['#1971c2','#0d4f8a'],['#c2255c','#8f1b47']];
 let state={accounts:[],activeAcc:null,dialogs:[],allDialogs:[],activeDlg:null,messages:[],serverOk:false,activeTab:'chats'};
+const readDialogs=new Set(); // tracks dialog IDs the user has opened
 let phoneCodeHash='',pendingPhone='',pendingSession='';
 
 // LocalStorage helpers
@@ -228,6 +229,7 @@ function renderAccounts(){
 async function selectAccount(phone){
   if(pollTimer){clearInterval(pollTimer);pollTimer=null;}
   if(dialogPollTimer){clearInterval(dialogPollTimer);dialogPollTimer=null;}
+  readDialogs.clear();
   state.activeAcc=state.accounts.find(a=>a.phone===phone);
   state.activeDlg=null;state.messages=[];
   renderAccounts();
@@ -237,7 +239,7 @@ async function selectAccount(phone){
   document.getElementById('chat-header').style.display='none';
   document.getElementById('input-wrap').style.display='none';
   const dialogs=await fetch(`${API}/dialogs`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.activeAcc.session},body:'{}'}).then(r=>r.json()).catch(()=>[]);
-  state.allDialogs=dialogs;filterDialogs(document.getElementById('search-input').value);
+  state.allDialogs=applyReadState(dialogs);filterDialogs(document.getElementById('search-input').value);
   if(dialogPollTimer)clearInterval(dialogPollTimer);
   dialogPollTimer=setInterval(pollDialogs,30000);
 }
@@ -277,6 +279,7 @@ let dialogPollTimer=null;
 async function selectDialog(id,name){
   if(pollTimer){clearInterval(pollTimer);pollTimer=null;}
   state.activeDlg={id,name};
+  readDialogs.add(id);
   // Clear unread badge immediately on open
   const dlg=state.allDialogs.find(d=>d.id===id);
   if(dlg)dlg.unreadCount=0;
@@ -314,16 +317,16 @@ async function pollMessages(id){
   }
 }
 
+function applyReadState(dialogs){
+  for(const d of dialogs) if(readDialogs.has(d.id)) d.unreadCount=0;
+  return dialogs;
+}
+
 async function pollDialogs(){
   if(!state.activeAcc)return;
   const dialogs=await fetch(`${API}/dialogs`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.activeAcc.session},body:'{}'}).then(r=>r.json()).catch(()=>null);
   if(!dialogs)return;
-  // Keep unread=0 for the currently open chat
-  if(state.activeDlg){
-    const d=dialogs.find(d=>d.id===state.activeDlg.id);
-    if(d)d.unreadCount=0;
-  }
-  state.allDialogs=dialogs;
+  state.allDialogs=applyReadState(dialogs);
   filterDialogs(document.getElementById('search-input').value);
 }
 
