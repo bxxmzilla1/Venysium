@@ -239,7 +239,7 @@ async function selectAccount(phone){
   const dialogs=await fetch(`${API}/dialogs`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.activeAcc.session},body:'{}'}).then(r=>r.json()).catch(()=>[]);
   state.allDialogs=dialogs;filterDialogs(document.getElementById('search-input').value);
   if(dialogPollTimer)clearInterval(dialogPollTimer);
-  dialogPollTimer=setInterval(pollDialogs,3000);
+  dialogPollTimer=setInterval(pollDialogs,1000);
 }
 
 function setTab(tab){
@@ -287,7 +287,7 @@ async function selectDialog(id,name){
   document.getElementById('input-wrap').style.display='flex';
   const msgs=await fetch(`${API}/messages`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.activeAcc.session},body:JSON.stringify({peerId:id})}).then(r=>r.json()).catch(()=>[]);
   state.messages=msgs;renderMessages();
-  pollTimer=setInterval(()=>pollMessages(id),3000);
+  pollTimer=setInterval(()=>pollMessages(id),1000);
 }
 
 async function pollMessages(id){
