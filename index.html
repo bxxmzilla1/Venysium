@@ -249,6 +249,7 @@ function setTab(tab){
 
 function filterDialogs(q){
   const base=state.allDialogs.filter(d=>
+    d.id==='777000' ? false :
     state.activeTab==='chats' ? d.isUser : (d.isGroup||d.isChannel)
   );
   state.dialogs=q?base.filter(d=>d.name.toLowerCase().includes(q.toLowerCase())):base;
