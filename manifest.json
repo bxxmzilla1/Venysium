@@ -1,0 +1,18 @@
+{
+  "name": "Venysium",
+  "short_name": "Venysium",
+  "description": "Telegram multi-account messaging hub",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f13",
+  "theme_color": "#0f0f13",
+  "orientation": "landscape-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
