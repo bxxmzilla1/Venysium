@@ -276,7 +276,11 @@ let dialogPollTimer=null;
 
 async function selectDialog(id,name){
   if(pollTimer){clearInterval(pollTimer);pollTimer=null;}
-  state.activeDlg={id,name};renderDialogs();
+  state.activeDlg={id,name};
+  // Clear unread badge immediately on open
+  const dlg=state.allDialogs.find(d=>d.id===id);
+  if(dlg)dlg.unreadCount=0;
+  renderDialogs();
   const el=document.getElementById('chat-msgs');
   el.className='';el.style.cssText='flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:10px';
   el.innerHTML='<div style="text-align:center;font-size:11px;color:var(--text3)">Loading...</div>';
@@ -314,6 +318,11 @@ async function pollDialogs(){
   if(!state.activeAcc)return;
   const dialogs=await fetch(`${API}/dialogs`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.activeAcc.session},body:'{}'}).then(r=>r.json()).catch(()=>null);
   if(!dialogs)return;
+  // Keep unread=0 for the currently open chat
+  if(state.activeDlg){
+    const d=dialogs.find(d=>d.id===state.activeDlg.id);
+    if(d)d.unreadCount=0;
+  }
   state.allDialogs=dialogs;
   filterDialogs(document.getElementById('search-input').value);
 }
