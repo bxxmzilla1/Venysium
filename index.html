@@ -59,6 +59,10 @@ body{display:flex;margin:0;padding:0}
 #dlg-search input{width:100%;padding:8px 11px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;outline:none;font-family:var(--font)}
 #dlg-search input::placeholder{color:var(--text3)}
 #dlg-search input:focus{border-color:var(--accent)}
+#dlg-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.dlg-tab{flex:1;padding:9px 0;font-size:11px;font-weight:500;color:var(--text3);text-align:center;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s}
+.dlg-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.dlg-tab:hover:not(.active){color:var(--text2)}
 #dialogs-list{flex:1;overflow-y:auto}
 #dialogs-list::-webkit-scrollbar{width:3px}
 #dialogs-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
@@ -149,6 +153,10 @@ body{display:flex;margin:0;padding:0}
 
   <div id="dialogs-col">
     <div id="dlg-search"><input id="search-input" placeholder="Search conversations..." oninput="filterDialogs(this.value)"/></div>
+    <div id="dlg-tabs">
+      <div class="dlg-tab active" onclick="setTab('chats')">Chats</div>
+      <div class="dlg-tab" onclick="setTab('groups')">Groups & Channels</div>
+    </div>
     <div id="dialogs-list">
       <div class="empty-state" style="padding-top:60px"><div class="empty-icon">💬</div><p>Select an account</p></div>
     </div>
@@ -185,7 +193,7 @@ const BASE = IS_ELECTRON ? 'http://localhost:3333' : '';
 const API = BASE + '/api';
 
 const PALETTES=[['#3b5bdb','#1c3799'],['#0ca678','#096b52'],['#e8590c','#b54309'],['#9c36b5','#6d23a0'],['#1971c2','#0d4f8a'],['#c2255c','#8f1b47']];
-let state={accounts:[],activeAcc:null,dialogs:[],allDialogs:[],activeDlg:null,messages:[],serverOk:false};
+let state={accounts:[],activeAcc:null,dialogs:[],allDialogs:[],activeDlg:null,messages:[],serverOk:false,activeTab:'chats'};
 let phoneCodeHash='',pendingPhone='',pendingSession='';
 
 // LocalStorage helpers
@@ -228,11 +236,22 @@ async function selectAccount(phone){
   document.getElementById('chat-header').style.display='none';
   document.getElementById('input-wrap').style.display='none';
   const dialogs=await fetch(`${API}/dialogs`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.activeAcc.session},body:'{}'}).then(r=>r.json()).catch(()=>[]);
-  state.dialogs=dialogs;state.allDialogs=dialogs;renderDialogs();
+  state.allDialogs=dialogs;filterDialogs(document.getElementById('search-input').value);
+}
+
+function setTab(tab){
+  state.activeTab=tab;
+  document.querySelectorAll('.dlg-tab').forEach((el,i)=>{
+    el.classList.toggle('active',(i===0&&tab==='chats')||(i===1&&tab==='groups'));
+  });
+  filterDialogs(document.getElementById('search-input').value);
 }
 
 function filterDialogs(q){
-  state.dialogs=q?state.allDialogs.filter(d=>d.name.toLowerCase().includes(q.toLowerCase())):state.allDialogs;
+  const base=state.allDialogs.filter(d=>
+    state.activeTab==='chats' ? d.isUser : (d.isGroup||d.isChannel)
+  );
+  state.dialogs=q?base.filter(d=>d.name.toLowerCase().includes(q.toLowerCase())):base;
   renderDialogs();
 }
 
