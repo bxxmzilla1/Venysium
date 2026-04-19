@@ -227,6 +227,7 @@ function renderAccounts(){
 
 async function selectAccount(phone){
   if(pollTimer){clearInterval(pollTimer);pollTimer=null;}
+  if(dialogPollTimer){clearInterval(dialogPollTimer);dialogPollTimer=null;}
   state.activeAcc=state.accounts.find(a=>a.phone===phone);
   state.activeDlg=null;state.messages=[];
   renderAccounts();
@@ -237,6 +238,8 @@ async function selectAccount(phone){
   document.getElementById('input-wrap').style.display='none';
   const dialogs=await fetch(`${API}/dialogs`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.activeAcc.session},body:'{}'}).then(r=>r.json()).catch(()=>[]);
   state.allDialogs=dialogs;filterDialogs(document.getElementById('search-input').value);
+  if(dialogPollTimer)clearInterval(dialogPollTimer);
+  dialogPollTimer=setInterval(pollDialogs,3000);
 }
 
 function setTab(tab){
@@ -269,6 +272,7 @@ function renderDialogs(){
 }
 
 let pollTimer=null;
+let dialogPollTimer=null;
 
 async function selectDialog(id,name){
   if(pollTimer){clearInterval(pollTimer);pollTimer=null;}
@@ -297,6 +301,14 @@ async function pollMessages(id){
     const atBottom=el.scrollHeight-el.scrollTop-el.clientHeight<60;
     state.messages=msgs;renderMessages(atBottom);
   }
+}
+
+async function pollDialogs(){
+  if(!state.activeAcc)return;
+  const dialogs=await fetch(`${API}/dialogs`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.activeAcc.session},body:'{}'}).then(r=>r.json()).catch(()=>null);
+  if(!dialogs)return;
+  state.allDialogs=dialogs;
+  filterDialogs(document.getElementById('search-input').value);
 }
 
 function renderMessages(scroll=true){
